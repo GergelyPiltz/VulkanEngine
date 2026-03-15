@@ -32,6 +32,7 @@ include_directories(
 
 target_link_libraries(VulkanEngine
     PRIVATE
+        glm
         glfw
         Vulkan::Vulkan
 )
@@ -40,6 +41,11 @@ target_link_libraries(VulkanEngine
 # Vulkan configuration (SDK should be installed and environment variable present)
 # ----------------------------------
 find_package(Vulkan REQUIRED)
+
+# ----------------------------------
+# GLM configuration
+# ----------------------------------
+add_subdirectory(external/glm)
 
 # ----------------------------------
 # GLFW configuration (STATIC)
@@ -56,7 +62,6 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(GLFW_USE_HYBRID_HPG OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(external/glfw)
-
 
 # ----------------------------------
 # Windows system libraries required by GLFW
