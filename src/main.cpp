@@ -1,23 +1,19 @@
-#include <GLFW/glfw3.h>
+#include "app.hpp"
+#include <iostream>
+#include <stdexcept>
+#include <cstdlib>
 
 int main()
 {
-    if (!glfwInit())
-        return -1;
+    App app;
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    GLFWwindow* window = glfwCreateWindow(800, 600, "GLFW", nullptr, nullptr);
-    if (!window)
-        return -1;
-
-    while (!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
+    try {
+        app.run();
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    return 0;
+    return EXIT_SUCCESS;
 }
