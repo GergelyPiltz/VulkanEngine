@@ -1,11 +1,11 @@
-#include "app.hpp"
+#include "vulkan_app.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
 
 int main()
 {
-    App app;
+    VulkanApp app = VulkanApp();
 
     try {
         app.run();

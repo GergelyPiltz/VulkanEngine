@@ -23,8 +23,18 @@ endif()
 # ----------------------------------
 add_executable(VulkanEngine
     "src/main.cpp"
-    "src/app.cpp"
-  )
+    "src/window.cpp"
+    "src/pipeline.cpp"
+    "src/vulkan_app.cpp"
+    "src/device.cpp" 
+    "src/swapchain.cpp"
+    "src/model.cpp"
+    "src/renderer.cpp"
+    "src/render_system.cpp"
+    "src/camera.cpp"
+    "src/keyboard_movement_controller.cpp" 
+    "src/game_object.cpp"
+)
 
 include_directories(
     "include"
