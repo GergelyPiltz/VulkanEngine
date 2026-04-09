@@ -6,6 +6,7 @@
 #include "game_object.hpp"
 #include "renderer.hpp"
 #include "render_system.hpp"
+#include "descriptors.hpp"
 
 #include <memory>
 #include <vector>
@@ -29,5 +30,7 @@ private:
 	Device device{ window };
 	Renderer renderer{ window, device };
 
+	// note: must be declared after the Device
+	std::unique_ptr<DescriptorPool> globalPool{};
 	std::vector<GameObject> gameObjects;
 };

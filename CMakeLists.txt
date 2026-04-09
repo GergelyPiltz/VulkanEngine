@@ -34,6 +34,8 @@ add_executable(VulkanEngine
     "src/camera.cpp"
     "src/keyboard_movement_controller.cpp" 
     "src/game_object.cpp"
+    "src/buffer.cpp" 
+    "src/descriptors.cpp"
 )
 
 include_directories(
