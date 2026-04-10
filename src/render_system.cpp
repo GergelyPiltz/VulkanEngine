@@ -58,7 +58,7 @@ void RenderSystem::createPipeline(VkRenderPass renderPass) {
         pipelineConfig);
 }
 
-void RenderSystem::renderGameObjects(FrameInfo& frameInfo, std::vector<GameObject>& gameObjects) {
+void RenderSystem::renderGameObjects(FrameInfo& frameInfo) {
     pipeline->bind(frameInfo.commandBuffer);
 
     vkCmdBindDescriptorSets(
@@ -72,7 +72,8 @@ void RenderSystem::renderGameObjects(FrameInfo& frameInfo, std::vector<GameObjec
         nullptr
     );
 
-    for (auto& obj : gameObjects) {
+    for (auto& kvp : frameInfo.gameObjects) {
+        auto& obj = kvp.second;
         SimplePushConstantData push{};
         push.modelMatrix = obj.transform.mat4();
         push.normalMatrix = obj.transform.normalMatrix();

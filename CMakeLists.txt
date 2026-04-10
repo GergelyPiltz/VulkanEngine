@@ -36,7 +36,7 @@ add_executable(VulkanEngine
     "src/game_object.cpp"
     "src/buffer.cpp" 
     "src/descriptors.cpp"
-)
+ "src/point_light_system.cpp")
 
 include_directories(
     "include"

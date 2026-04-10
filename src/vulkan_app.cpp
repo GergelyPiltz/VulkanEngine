@@ -16,8 +16,12 @@
 #include <memory>
 
 struct GlobalUBO {
-    alignas(16) glm::mat4 projectionView{ 1.f };
-    alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+    alignas(16) glm::mat4 projection{ 1.f };
+    alignas(16) glm::mat4 view{ 1.f };
+    // alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
+    alignas(16) glm::vec4 ambientColor{ 1.f, 1.f, 1.f, .02f };
+    alignas(16) glm::vec3 lightPosition{ 0.f, -1.f, 0.f };
+    alignas(16) glm::vec4 lightColor{ 0.3f, 0.6f, 0.8f, 2.f };
 };
 
 VulkanApp::VulkanApp() {
@@ -58,7 +62,7 @@ void VulkanApp::run() {
     // std::println("Max push constants size: {0}", std::to_string(device.properties.limits.maxPushConstantsSize));
 
     auto globalSetLayout = DescriptorSetLayout::Builder(device)
-        .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+        .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
         .build();
 
     std::vector<VkDescriptorSet> globalSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -75,6 +79,7 @@ void VulkanApp::run() {
     camera.setViewTarget(glm::vec3(-1.f, -2.f, 2.f), glm::vec3(0.f, 0.f, 2.5f));
 
     auto viewerObject = GameObject::createGameObject();
+    viewerObject.transform.translation.y = -1.f;
     KeyboardMovementController cameraController{};
     
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -93,7 +98,7 @@ void VulkanApp::run() {
 
         float aspect = renderer.getAspectRation();
         //camera.setOrthographicProjection(-aspect, aspect, -10, 10, -10, 10);
-        camera.setPerspectiveProjection(glm::radians(50.f), aspect, .1f, 10.f);
+        camera.setPerspectiveProjection(glm::radians(50.f), aspect, .1f, 1000.f);
 
         if (auto commandBuffer = renderer.beginFrame()) {
             int frameIndex = renderer.getFrameIndex();
@@ -103,18 +108,20 @@ void VulkanApp::run() {
                 deltaTime,
                 commandBuffer,
                 camera,
-                globalSets[frameIndex]
+                globalSets[frameIndex],
+                gameObjects
             };
 
             // update
             GlobalUBO ubo{};
-            ubo.projectionView = camera.getProjection() * camera.getView();
+            ubo.projection = camera.getProjection();
+            ubo.view = camera.getView();
             uboBuffers[frameIndex]->writeToBuffer(&ubo);
             uboBuffers[frameIndex]->flush();
 
             // render
             renderer.beginSwapChainRenderPass(commandBuffer);
-            renderSystem.renderGameObjects(frameInfo, gameObjects);
+            renderSystem.renderGameObjects(frameInfo);
             renderer.endSwapChainRenderPass(commandBuffer);
             renderer.endFrame();
         }
@@ -123,29 +130,37 @@ void VulkanApp::run() {
 }
 
 void VulkanApp::loadGameObjects() {
-    for (size_t x = 0; x < 10; x++)
-        for (size_t z = 0; z < 10; z++)
-        {
-            std::shared_ptr<Model> model = Model::createModelFromFile(device, "models/colored_cube.obj");
-            auto gameObj = GameObject::createGameObject();
-            gameObj.model = model;
-            gameObj.transform.translation = { x * 2, 1, z * 2 };
-            gameObj.transform.scale = { .2f, .2f, .2f };
-            gameObjects.push_back(std::move(gameObj));
-        }
 
-    std::shared_ptr<Model> model = Model::createModelFromFile(device, "models/flat_vase.obj");
-    auto gameObj = GameObject::createGameObject();
-    gameObj.model = model;
-    gameObj.transform.translation = { -1.0f, .5f, 1.5f };
-    gameObj.transform.scale = { 1.5f, 1.5f, 1.5f };
-    gameObjects.push_back(std::move(gameObj));
+    std::shared_ptr<Model> quadModel = Model::createModelFromFile(device, "models/quad.obj");
+    auto quad = GameObject::createGameObject();
+    quad.model = quadModel;
+    quad.transform.translation = { 0.f, 0.f, 0.f };
+    quad.transform.scale = { 10.f, 10.f, 10.f };
+    gameObjects.emplace(quad.getId(), std::move(quad));
 
-    std::shared_ptr<Model> model1 = Model::createModelFromFile(device, "models/smooth_vase.obj");
-    auto gameObj1 = GameObject::createGameObject();
-    gameObj1.model = model1;
-    gameObj1.transform.translation = { 1.0f, .5f, 1.5f };
-    gameObj1.transform.scale = { 1.5f, 1.5f, 1.5f };
-    gameObjects.push_back(std::move(gameObj1));
+    // for (size_t x = 0; x < 10; x++)
+    //     for (size_t z = 0; z < 10; z++)
+    //     {
+    //         std::shared_ptr<Model> model = Model::createModelFromFile(device, "models/colored_cube.obj");
+    //         auto gameObj = GameObject::createGameObject();
+    //         gameObj.model = model;
+    //         gameObj.transform.translation = { x * 2, -.5f, z * 2 };
+    //         gameObj.transform.scale = { .2f, .2f, .2f };
+    //         gameObjects.push_back(std::move(gameObj));
+    //     }
+
+    std::shared_ptr<Model> flatVaseModel = Model::createModelFromFile(device, "models/flat_vase.obj");
+    auto flatVase = GameObject::createGameObject();
+    flatVase.model = flatVaseModel;
+    flatVase.transform.translation = { -1.0f, .0f, 1.5f };
+    flatVase.transform.scale = { 2.f, 2.f, 2.f };
+    gameObjects.emplace(flatVase.getId(), std::move(flatVase));
+
+    std::shared_ptr<Model> smoothVaseModel = Model::createModelFromFile(device, "models/smooth_vase.obj");
+    auto smoothVase = GameObject::createGameObject();
+    smoothVase.model = smoothVaseModel;
+    smoothVase.transform.translation = { 1.0f, .0f, 1.5f };
+    smoothVase.transform.scale = { 2.f, 2.f, 2.f };
+    gameObjects.emplace(smoothVase.getId(), std::move(smoothVase));
 
 }

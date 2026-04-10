@@ -1,10 +1,12 @@
 #pragma once
-
 #include "model.hpp"
 
+// libs
 #include "glm/gtc/matrix_transform.hpp"
 
+//std
 #include <memory>
+#include <unordered_map>
 
 struct TransformComponent {
 	glm::vec3 translation;
@@ -22,6 +24,7 @@ struct TransformComponent {
 class GameObject {
 public:
 	using id_t = unsigned int;
+	using Map = std::unordered_map<id_t, GameObject>;
 
 	static GameObject createGameObject() {
 		static id_t currentId = 0;
