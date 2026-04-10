@@ -3,6 +3,7 @@
 #include "camera.hpp"
 #include "keyboard_movement_controller.hpp"
 #include "buffer.hpp"
+#include "point_light_system.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -72,7 +73,10 @@ void VulkanApp::run() {
             .writeBuffer(0, &bufferInfo)
             .build(globalSets[i]);
     }
+
     RenderSystem renderSystem{ device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout()};
+
+    PointLightSystem pointLightSystem{ device, renderer.getSwapChainRenderPass(), globalSetLayout->getDescriptorSetLayout() };
 
     Camera camera;
     //camera.setViewDirection(glm::vec3( 0.f ), glm::vec3(.5f, 0.f, 1.f));
@@ -122,6 +126,7 @@ void VulkanApp::run() {
             // render
             renderer.beginSwapChainRenderPass(commandBuffer);
             renderSystem.renderGameObjects(frameInfo);
+            pointLightSystem.render(frameInfo);
             renderer.endSwapChainRenderPass(commandBuffer);
             renderer.endFrame();
         }

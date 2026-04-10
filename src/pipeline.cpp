@@ -96,6 +96,8 @@ void Pipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo) {
     configInfo.dynamicStateInfo.flags = 0;
     configInfo.dynamicStateInfo.pNext = NULL;
 
+    configInfo.bindingDescriptions = Model::Vertex::getBindingDescriptions();
+    configInfo.attributeDescriptions = Model::Vertex::getAttributeDescriptions();
 }
 
 std::vector<char> Pipeline::readShader(const std::string& path) {
@@ -146,8 +148,8 @@ void Pipeline::createGraphicsPipeline(const std::string& vertexShaderPath, const
     shaderStages[1].pNext = nullptr;
     shaderStages[1].pSpecializationInfo = nullptr;
 
-    auto attributeDescriptions = Model::Vertex::getAttributeDescriptions();
-    auto bindingDescriptions = Model::Vertex::getBindingDescriptions();
+    auto& bindingDescriptions = configInfo.bindingDescriptions;
+    auto& attributeDescriptions = configInfo.attributeDescriptions;
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());

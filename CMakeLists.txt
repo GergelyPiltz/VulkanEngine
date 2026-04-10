@@ -119,8 +119,8 @@ set(SPIRV_OUTPUTS)
 foreach(shader ${SHADER_FILES})
     file(RELATIVE_PATH REL_PATH ${SHADER_SRC_DIR} ${shader})
 
-    get_filename_component(NAME_WE ${shader} NAME_WE)
-    set(SPIRV "${SHADER_BIN_DIR}/${NAME_WE}.spv")
+    get_filename_component(FILENAME ${shader} NAME)
+    set(SPIRV "${SHADER_BIN_DIR}/${FILENAME}.spv")
 
     get_filename_component(SPIRV_DIR ${SPIRV} DIRECTORY)
 
@@ -129,7 +129,7 @@ foreach(shader ${SHADER_FILES})
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SPIRV_DIR}
         COMMAND ${GLSLC} ${shader} -o ${SPIRV} ${SHADER_FLAGS}
         DEPENDS ${shader}
-        COMMENT "Compiling shader ${REL_PATH}"
+        COMMENT "Compiling shader ${SPIRV}"
         VERBATIM
     )
 
