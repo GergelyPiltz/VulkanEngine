@@ -44,6 +44,9 @@ public:
 	void bind(VkCommandBuffer commandBuffer) const;
 
 	static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
+	static void enableAlphaBlending(PipelineConfigInfo& configInfo);
+
+
 private:
 	static std::vector<char> readShader(const std::string& path);
 	void createGraphicsPipeline(

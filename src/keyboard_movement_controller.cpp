@@ -4,7 +4,7 @@
 
 #include <limits>
 
-void KeyboardMovementController::moveInPlaneXZ(GLFWwindow* window, float dt, GameObject& gameObject) {
+void KeyboardMovementController::moveInPlaneXZ(GLFWwindow* window, float dt, GameObject& gameObject) const {
 	glm::vec3 rotate{ 0 };
 	if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS) rotate.y += 1.f;
 	if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS) rotate.y -= 1.f;

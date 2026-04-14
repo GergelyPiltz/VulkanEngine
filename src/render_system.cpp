@@ -11,8 +11,8 @@
 #include <iostream>
 
 struct SimplePushConstantData {
-    alignas(16) glm::mat4 modelMatrix{ 1.f }; // identity
-    alignas(16) glm::mat4 normalMatrix{ 1.f }; // identity
+    glm::mat4 modelMatrix{ 1.f }; // identity
+    glm::mat4 normalMatrix{ 1.f }; // identity
 };
 
 RenderSystem::RenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalDescriptorSetLayout) : device{ device } {
@@ -74,8 +74,9 @@ void RenderSystem::renderGameObjects(FrameInfo& frameInfo) {
 
     for (auto& kvp : frameInfo.gameObjects) {
         auto& obj = kvp.second;
+        if (obj.model == nullptr) continue;
         SimplePushConstantData push{};
-        push.modelMatrix = obj.transform.mat4();
+        push.modelMatrix = obj.transform.modelMatrix();
         push.normalMatrix = obj.transform.normalMatrix();
 
         vkCmdPushConstants(

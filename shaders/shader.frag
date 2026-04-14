@@ -7,12 +7,18 @@ layout(location = 2) in vec3 fragNormalWorld;
 
 layout (location = 0) out vec4 outColor;
 
+struct PointLight {
+	vec4 position;
+	vec4 color;
+};
+
 layout(set = 0, binding = 0) uniform GlobalUBO {
 	mat4 projection;
 	mat4 view;
+	mat4 invView;
 	vec4 ambientLight;
-	vec3 lightPosition;
-	vec4 lightColor;
+	PointLight  pointLights[10];
+	int numLights;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -21,12 +27,32 @@ layout(push_constant) uniform Push {
 } push;
 
 void main() {
-	vec3 directionToLight = ubo.lightPosition - fragPosWorld;
-	float attenuation = 1.0 / dot(directionToLight, directionToLight); // dot of itself is an efficient way to get length squared
+	vec3 diffuseLight = ubo.ambientLight.xyz * ubo.ambientLight.w;
+	vec3 specularLight = vec3(0.0);
+	vec3 surfaceNormal = normalize(fragNormalWorld);
 
-	vec3 lightColor = ubo.lightColor.xyz * ubo.lightColor.w * attenuation;
-	vec3 ambientLight = ubo.ambientLight.xyz * ubo.ambientLight.w;
-	vec3 diffuseLight = lightColor * max(dot(normalize(fragNormalWorld), normalize(directionToLight)), 0);
+	vec3 cameraPosWorld = ubo.invView[3].xyz;
+	vec3 viewDirection = normalize(cameraPosWorld - fragPosWorld);
 
-    outColor = vec4((diffuseLight + ambientLight) * fragColor, 1.0);
+	for (int i = 0; i < ubo.numLights; i++) {
+		PointLight light = ubo.pointLights[i];
+		vec3 direntionToLight = light.position.xyz - fragPosWorld;
+		float attenuation = 1.0 / dot(direntionToLight, direntionToLight);
+		direntionToLight = normalize(direntionToLight);
+
+		float cosAngIncidence = max(dot(surfaceNormal, direntionToLight), 0);
+		vec3 intensity = light.color.xyz * light.color.w * attenuation;
+
+		diffuseLight += intensity * cosAngIncidence;
+
+		// specular lighting
+
+		vec3 halfAngle = normalize(direntionToLight + viewDirection);
+		float blinnTerm = dot(surfaceNormal, halfAngle);
+		blinnTerm = clamp(blinnTerm, 0, 1);
+		blinnTerm = pow(blinnTerm, 512.0); // higher = sharper
+		specularLight += intensity * blinnTerm;
+	}
+
+    outColor = vec4(diffuseLight * fragColor + specularLight * fragColor, 1.0);
 }

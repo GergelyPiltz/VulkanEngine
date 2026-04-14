@@ -16,15 +16,6 @@
 #include <chrono>
 #include <memory>
 
-struct GlobalUBO {
-    alignas(16) glm::mat4 projection{ 1.f };
-    alignas(16) glm::mat4 view{ 1.f };
-    // alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
-    alignas(16) glm::vec4 ambientColor{ 1.f, 1.f, 1.f, .02f };
-    alignas(16) glm::vec3 lightPosition{ 0.f, -1.f, 0.f };
-    alignas(16) glm::vec4 lightColor{ 0.3f, 0.6f, 0.8f, 2.f };
-};
-
 VulkanApp::VulkanApp() {
     globalPool = DescriptorPool::Builder(device)
         .setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
@@ -120,13 +111,18 @@ void VulkanApp::run() {
             GlobalUBO ubo{};
             ubo.projection = camera.getProjection();
             ubo.view = camera.getView();
+            ubo.inverseView = camera.getInverseView();
+            pointLightSystem.update(frameInfo, ubo);
             uboBuffers[frameIndex]->writeToBuffer(&ubo);
             uboBuffers[frameIndex]->flush();
 
             // render
             renderer.beginSwapChainRenderPass(commandBuffer);
+
+            // Order matters
             renderSystem.renderGameObjects(frameInfo);
             pointLightSystem.render(frameInfo);
+
             renderer.endSwapChainRenderPass(commandBuffer);
             renderer.endFrame();
         }
@@ -135,37 +131,46 @@ void VulkanApp::run() {
 }
 
 void VulkanApp::loadGameObjects() {
+    
+    std::vector<glm::vec3> lightColors{
+        {1.f, .1f, .1f},
+        {.1f, .1f, 1.f},
+        {.1f, 1.f, .1f},
+        {1.f, 1.f, .1f},
+        {.1f, 1.f, 1.f},
+        {1.f, 1.f, 1.f}
+    };
+
+    for (int i = 0; i < lightColors.size(); i++) {
+        auto pointLight = GameObject::makePointLight(1.0f, 0.1f, lightColors[i]);
+
+        auto rotateLight = glm::rotate(glm::mat4{ 1.0f }, (i * glm::two_pi<float>()) / lightColors.size(), glm::vec3{0, -1, 0});
+        pointLight.transform.translation = rotateLight * glm::vec4{ 0.0f, -1.5f, 2.0f, 1.0f };
+
+        gameObjects.emplace(pointLight.getId(), std::move(pointLight));
+    }
 
     std::shared_ptr<Model> quadModel = Model::createModelFromFile(device, "models/quad.obj");
     auto quad = GameObject::createGameObject();
     quad.model = quadModel;
-    quad.transform.translation = { 0.f, 0.f, 0.f };
-    quad.transform.scale = { 10.f, 10.f, 10.f };
+    quad.transform.translation = { 0.0f, 0.0f, 0.0f };
+    quad.transform.scale = { 10.0f, 10.0f, 10.0f };
     gameObjects.emplace(quad.getId(), std::move(quad));
 
-    // for (size_t x = 0; x < 10; x++)
-    //     for (size_t z = 0; z < 10; z++)
-    //     {
-    //         std::shared_ptr<Model> model = Model::createModelFromFile(device, "models/colored_cube.obj");
-    //         auto gameObj = GameObject::createGameObject();
-    //         gameObj.model = model;
-    //         gameObj.transform.translation = { x * 2, -.5f, z * 2 };
-    //         gameObj.transform.scale = { .2f, .2f, .2f };
-    //         gameObjects.push_back(std::move(gameObj));
-    //     }
-
-    std::shared_ptr<Model> flatVaseModel = Model::createModelFromFile(device, "models/flat_vase.obj");
-    auto flatVase = GameObject::createGameObject();
-    flatVase.model = flatVaseModel;
-    flatVase.transform.translation = { -1.0f, .0f, 1.5f };
-    flatVase.transform.scale = { 2.f, 2.f, 2.f };
-    gameObjects.emplace(flatVase.getId(), std::move(flatVase));
+    //std::shared_ptr<Model> flatVaseModel = Model::createModelFromFile(device, "models/flat_vase.obj");
+    //auto flatVase = GameObject::createGameObject();
+    //flatVase.model = flatVaseModel;
+    //flatVase.transform.translation = { -1.0f, 0.0f, 1.5f };
+    //flatVase.transform.scale = { 2.0f, 2.0f, 2.0f };
+    //flatVase.transform.rotation = { 0.0f, 0.0f, 0.0f };
+    //gameObjects.emplace(flatVase.getId(), std::move(flatVase));
 
     std::shared_ptr<Model> smoothVaseModel = Model::createModelFromFile(device, "models/smooth_vase.obj");
     auto smoothVase = GameObject::createGameObject();
     smoothVase.model = smoothVaseModel;
-    smoothVase.transform.translation = { 1.0f, .0f, 1.5f };
-    smoothVase.transform.scale = { 2.f, 2.f, 2.f };
+    smoothVase.transform.translation = { 0.0f, 0.0f, 0.0f };
+    smoothVase.transform.scale = { 2.0f, 2.0f, 2.0f };
+    smoothVase.transform.rotation = { 0, 0, 0 };
     gameObjects.emplace(smoothVase.getId(), std::move(smoothVase));
 
 }
