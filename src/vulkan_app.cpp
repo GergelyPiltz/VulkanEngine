@@ -4,6 +4,7 @@
 #include "keyboard_movement_controller.hpp"
 #include "buffer.hpp"
 #include "point_light_system.hpp"
+#include "texture_sampler.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -20,6 +21,7 @@ VulkanApp::VulkanApp() {
     globalPool = DescriptorPool::Builder(device)
         .setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
         .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SwapChain::MAX_FRAMES_IN_FLIGHT)
+        .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, SwapChain::MAX_FRAMES_IN_FLIGHT)
         .build();
     loadGameObjects();
 }
@@ -55,13 +57,27 @@ void VulkanApp::run() {
 
     auto globalSetLayout = DescriptorSetLayout::Builder(device)
         .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+        .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
         .build();
+
+
+    Texture texture = Texture(device);
+    TextureSampler textureSampler = TextureSampler(device);
+
 
     std::vector<VkDescriptorSet> globalSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
     for (int i = 0; i < globalSets.size(); i++) {
         auto bufferInfo = uboBuffers[i]->descriptorInfo();
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = texture.textureImageView();
+        imageInfo.sampler = textureSampler.textureSampler();
+
+
         DescriptorWriter(*globalSetLayout, *globalPool)
             .writeBuffer(0, &bufferInfo)
+            .writeImage(1, &imageInfo)
             .build(globalSets[i]);
     }
 
@@ -172,5 +188,12 @@ void VulkanApp::loadGameObjects() {
     smoothVase.transform.scale = { 2.0f, 2.0f, 2.0f };
     smoothVase.transform.rotation = { 0, 0, 0 };
     gameObjects.emplace(smoothVase.getId(), std::move(smoothVase));
+
+    std::shared_ptr<Model> moonModel = Model::createModelFromFile(device, "models/moon.obj");
+    auto moon = GameObject::createGameObject();
+    moon.model = moonModel;
+    moon.transform.translation = { 0.0f, -4.0f, 0.0f };
+    moon.transform.scale = { 1.0f, 1.0f, 1.0f };
+    gameObjects.emplace(moon.getId(), std::move(moon));
 
 }

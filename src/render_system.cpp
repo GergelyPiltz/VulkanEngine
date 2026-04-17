@@ -11,8 +11,8 @@
 #include <iostream>
 
 struct SimplePushConstantData {
-    glm::mat4 modelMatrix{ 1.f }; // identity
-    glm::mat4 normalMatrix{ 1.f }; // identity
+    glm::mat4 modelMatrix{ 1.0f }; // identity
+    glm::mat4 normalMatrix{ 1.0f }; // identity
 };
 
 RenderSystem::RenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalDescriptorSetLayout) : device{ device } {
