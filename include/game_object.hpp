@@ -12,7 +12,7 @@
 struct Transform {
 	Transform() = default;
 
-	glm::vec3 translation = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 position = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
 	glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
 
@@ -50,8 +50,14 @@ struct RigidBody {
 	float mass = 0.0f;
 };
 
-struct BoundingSphere {
+struct SphereCollider {
+	glm::vec3 center{ 0.0f };
 	float radius = 0.0f;
+};
+
+struct BoxCollider {
+	glm::vec3 minExtent{ 0.0f };
+	glm::vec3 maxExtent{ 0.0f };
 };
 
 class GameObject {
@@ -74,12 +80,14 @@ public:
 
 	uint32_t textureIndex = 0;
 
+
 	std::unique_ptr<Transform> transform;
 	std::shared_ptr<Model> model;
-	std::shared_ptr<Model> wireFrame;
+	//std::shared_ptr<Model> wireFrame;
 	std::unique_ptr<PointLight> pointLight;
-	std::unique_ptr<BoundingSphere> boundingSphere;
 	std::unique_ptr<RigidBody> rigidBody;
+	std::unique_ptr<SphereCollider> sphereCollider;
+	std::unique_ptr<BoxCollider> boxCollider;
 
 private:
     GameObject(id_t objId) : id{ objId } {}

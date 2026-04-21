@@ -34,6 +34,6 @@ void KeyboardMovementController::moveInPlaneXZ(GLFWwindow* window, float dt, Gam
 	if (glfwGetKey(window, keys.moveDown) == GLFW_PRESS) moveDir -= upDir;
 
 	if (glm::dot(moveDir, moveDir) > std::numeric_limits<float> ::epsilon()) {
-		gameObject.transform->translation += moveSpeed * dt * glm::normalize(moveDir);
+		gameObject.transform->position += moveSpeed * dt * glm::normalize(moveDir);
 	}
 }

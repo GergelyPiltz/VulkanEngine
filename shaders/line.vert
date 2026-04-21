@@ -20,8 +20,6 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
 
 layout(push_constant) uniform Push {
 	mat4 modelMatrix;
-	mat3x4 normalMatrix;
-	int textureIndex;
 } push;
 
 void main() {

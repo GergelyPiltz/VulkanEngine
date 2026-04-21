@@ -46,7 +46,8 @@ public:
 	Model& operator=(Model&&) = default;
 
 	static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath);
-	static std::unique_ptr<Model> sphere(Device& device, float radius, int stacks, int slices);
+	static std::unique_ptr<Model> sphere(Device& device, int stacks, int slices);
+	static std::unique_ptr<Model> cube(Device& device);
 
 	void bind(VkCommandBuffer commandBuffer);
 	void draw(VkCommandBuffer commandBuffer) const;

@@ -12,25 +12,25 @@ void PhysicsSystem::update(FrameInfo frameInfo) {
         if (objA.rigidBody == nullptr) continue;
 
         objA.rigidBody->velocity += gravity * objA.rigidBody->mass * frameInfo.frameTime;
-        objA.transform->translation += objA.rigidBody->velocity * frameInfo.frameTime;
+        objA.transform->position += objA.rigidBody->velocity * frameInfo.frameTime;
     }
 
     for (auto it = frameInfo.gameObjects.cbegin(); it != frameInfo.gameObjects.cend(); it++) {
         auto& objA = it->second;
         if (objA.rigidBody == nullptr) continue;
-        if (objA.boundingSphere == nullptr) continue;
+        if (objA.sphereCollider == nullptr) continue;
 
         for (auto itj = it; itj != frameInfo.gameObjects.cend(); itj++) {
             if (itj == it) continue;
             auto& objB = itj->second;
             if (objB.rigidBody == nullptr) continue;
-            if (objB.boundingSphere == nullptr) continue;
+            if (objB.sphereCollider == nullptr) continue;
 
-            glm::vec3 centerToCenter = objA.transform->translation - objB.transform->translation;
+            glm::vec3 centerToCenter = (objA.transform->position + objA.sphereCollider->center) - (objB.transform->position + objB.sphereCollider->center);
             float centerDistance = glm::sqrt(glm::dot(centerToCenter, centerToCenter));
-            float radiusDistance = centerDistance - objA.boundingSphere->radius - objB.boundingSphere->radius;
+            float radiusDistance = centerDistance - objA.sphereCollider->radius - objB.sphereCollider->radius;
 
-            std::cout << radiusDistance << std::endl;
+            //std::cout << radiusDistance << std::endl;
 
             if (radiusDistance < std::numeric_limits<float>::epsilon()) {
                 objA.rigidBody->velocity = glm::normalize(centerToCenter) * glm::sqrt(glm::dot(objA.rigidBody->velocity, objA.rigidBody->velocity));

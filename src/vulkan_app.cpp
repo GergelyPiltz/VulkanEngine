@@ -102,7 +102,7 @@ void VulkanApp::run() {
     Camera camera;
     auto viewerObject = GameObject::createGameObject();
     viewerObject.transform = std::make_unique<Transform>();
-    viewerObject.transform->translation = {0.0f, -2.0f, -5.0f};
+    viewerObject.transform->position = {0.0f, -2.0f, -5.0f};
     //camera.setViewDirection(viewerObject.transform.translation, { 0.0f, 0.0f, 0.0f });
     KeyboardMovementController cameraController{};
     
@@ -116,7 +116,7 @@ void VulkanApp::run() {
         currentTime = newTime;
 
         cameraController.moveInPlaneXZ(window.getGLFWwindow(), deltaTime, viewerObject);
-        camera.setViewYXZ(viewerObject.transform->translation, viewerObject.transform->rotation);
+        camera.setViewYXZ(viewerObject.transform->position, viewerObject.transform->rotation);
 
         // std::cout << "deltaTime: " << deltaTime << std::endl;
 
@@ -177,7 +177,7 @@ void VulkanApp::loadGameObjects() {
 
         pointLight.transform = std::make_unique<Transform>();
         auto rotateLight = glm::rotate(glm::mat4{ 1.0f }, (i * glm::two_pi<float>()) / lightColors.size(), glm::vec3{0, -1, 0});
-        pointLight.transform->translation = rotateLight * glm::vec4{ 0.0f, -1.5f, 2.0f, 1.0f };
+        pointLight.transform->position = rotateLight * glm::vec4{ 0.0f, -1.5f, 2.0f, 1.0f };
         pointLight.transform->scale.x = 0.1f;
 
         pointLight.pointLight = std::make_unique<PointLight>();
@@ -196,20 +196,17 @@ void VulkanApp::loadGameObjects() {
     //gameObjects.emplace(quad.getId(), std::move(quad));
 
     ///////////////////////////////////////////////////////////////////////////
-    auto boundingSphere = std::make_unique<RigidBody>();
-    std::shared_ptr<Model> sphereModel = Model::sphere(device, 1.0f, 100, 100);
     ///////////////////////////////////////////////////////////////////////////
     auto sphere0 = GameObject::createGameObject();
-    sphere0.wireFrame = sphereModel;
 
     sphere0.transform = std::make_unique<Transform>();
-    sphere0.transform->translation = { +5.0f, -3.5f, 0.7f };
+    sphere0.transform->position = { +5.0f, -3.5f, 0.0f };
     sphere0.transform->scale = { 1.0f, 1.0f, 1.0f };
 
     sphere0.textureIndex = 1;
 
-    sphere0.boundingSphere = std::make_unique<BoundingSphere>();
-    sphere0.boundingSphere->radius = 1.0f;
+    sphere0.sphereCollider = std::make_unique<SphereCollider>();
+    sphere0.sphereCollider->radius = 0.1f;
 
     sphere0.rigidBody = std::make_unique<RigidBody>();
     sphere0.rigidBody->velocity = { -4.0f, 0.0f, 0.0f };
@@ -218,16 +215,15 @@ void VulkanApp::loadGameObjects() {
     gameObjects.emplace(sphere0.getId(), std::move(sphere0));
     ///////////////////////////////////////////////////////////////////////////
     auto sphere1 = GameObject::createGameObject();
-    sphere1.wireFrame = sphereModel;
 
     sphere1.transform = std::make_unique<Transform>();
-    sphere1.transform->translation = { -2.0f, -4.5f, -0.7f };
+    sphere1.transform->position = { -2.0f, -4.5f, 0.0f };
     sphere1.transform->scale = { 1.0f, 1.0f, 1.0f };
 
     sphere1.textureIndex = 1;
 
-    sphere1.boundingSphere = std::make_unique<BoundingSphere>();
-    sphere1.boundingSphere->radius = 1.0f;
+    sphere1.sphereCollider = std::make_unique<SphereCollider>();
+    sphere1.sphereCollider->radius = 1.0f;
 
     sphere1.rigidBody = std::make_unique<RigidBody>();
     sphere1.rigidBody->velocity = { +1.0f, 0.0f, 0.0f };
@@ -235,5 +231,37 @@ void VulkanApp::loadGameObjects() {
 
     gameObjects.emplace(sphere1.getId(), std::move(sphere1));
     ///////////////////////////////////////////////////////////////////////////
+    auto cube0 = GameObject::createGameObject();
+
+    cube0.transform = std::make_unique<Transform>();
+    cube0.transform->position = { 0.0f, 0.0f, 0.0f };
+    cube0.transform->scale = { 1.0f, 1.0f, 1.0f };
+
+    cube0.textureIndex = 1;
+
+    cube0.boxCollider = std::make_unique<BoxCollider>();
+    cube0.boxCollider->minExtent = { -0.5f, -0.5f , -0.5f };
+    cube0.boxCollider->maxExtent = { 0.5f, 0.5f , 0.5f };
+
+    cube0.sphereCollider = std::make_unique<SphereCollider>();
+    cube0.sphereCollider->radius = 0.5f;
+
+    cube0.rigidBody = std::make_unique<RigidBody>();
+    cube0.rigidBody->velocity = { 0.0f, 0.0f, 0.0f };
+    cube0.rigidBody->mass = 0.0f;
+
+    gameObjects.emplace(cube0.getId(), std::move(cube0));
+    ///////////////////////////////////////////////////////////////////
+    auto pointLight = GameObject::createGameObject();
+
+    pointLight.transform = std::make_unique<Transform>();
+    pointLight.transform->position = { 0.0f, 0.0f, 0.0f };
+    pointLight.transform->scale.x = 0.1f;
+
+    pointLight.pointLight = std::make_unique<PointLight>();
+    pointLight.pointLight->color = glm::vec4( 1.0f );
+
+    gameObjects.emplace(pointLight.getId(), std::move(pointLight));
+
  
 }

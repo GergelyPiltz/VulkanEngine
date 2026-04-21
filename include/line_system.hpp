@@ -24,8 +24,19 @@ private:
 	void createPipelineLayout(VkDescriptorSetLayout globalDescriptorSetLayout);
 	void createPipeline(VkRenderPass renderPass);
 
+	void drawSphere(GameObject& object, FrameInfo& frameInfo);
+	void drawCube(GameObject& object, FrameInfo& frameInfo);
+
 	Device& device;
 
 	std::unique_ptr<Pipeline> pipeline;
 	VkPipelineLayout pipelineLayout;
+
+	Transform transform{};
+	std::unique_ptr<Model> sphere;
+	std::unique_ptr<Model> cube;
+	std::unique_ptr<Model> cylinder;
+	std::unique_ptr<Model> capsule;
+	std::unique_ptr<Model> pipe;
+	std::unique_ptr<Model> cone;
 };

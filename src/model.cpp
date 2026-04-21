@@ -206,7 +206,7 @@ void Model::Builder::loadModel(const std::string& filepath) {
 	}
 }
 
-std::unique_ptr<Model> Model::sphere(Device& device, float radius, int stacks, int slices) {
+std::unique_ptr<Model> Model::sphere(Device& device, int stacks, int slices) {
 	Builder builder;
 
 	for (int y = 0; y <= stacks; ++y) {
@@ -221,7 +221,7 @@ std::unique_ptr<Model> Model::sphere(Device& device, float radius, int stacks, i
 			float py = sin(theta) * sin(phi);
 			float pz = cos(theta);
 
-			builder.vertices.push_back({ (glm::vec3{px, py, pz} * radius), {px, py, pz}, {u, v} });
+			builder.vertices.push_back({ (glm::vec3{px, py, pz} ), {px, py, pz}, {u, v} });
 
 			int i0 = y * (slices + 1) + x;
 			int i1 = i0 + 1;
@@ -238,6 +238,55 @@ std::unique_ptr<Model> Model::sphere(Device& device, float radius, int stacks, i
 
 		}
 	}
+
+	return std::make_unique<Model>(device, builder);
+}
+
+std::unique_ptr<Model> Model::cube(Device& device)
+{
+	Builder builder;
+	const float h = 0.5f;
+	builder.vertices = {
+		// +h
+		{{ h, -h, -h}, {1, 0, 0}},
+		{{ h,  h, -h}, {1, 0, 0}},
+		{{ h,  h,  h}, {1, 0, 0}},
+		{{ h, -h,  h}, {1, 0, 0}},
+		// -h
+		{{-h, -h,  h}, {-1, 0, 0}},
+		{{-h,  h,  h}, {-1, 0, 0}},
+		{{-h,  h, -h}, {-1, 0, 0}},
+		{{-h, -h, -h}, {-1, 0, 0}},
+		// +Y
+		{{-h,  h, -h}, {0, 1, 0}},
+		{{-h,  h,  h}, {0, 1, 0}},
+		{{ h,  h,  h}, {0, 1, 0}},
+		{{ h,  h, -h}, {0, 1, 0}},
+		// -Y
+		{{-h, -h,  h}, {0, -1, 0}},
+		{{-h, -h, -h}, {0, -1, 0}},
+		{{ h, -h, -h}, {0, -1, 0}},
+		{{ h, -h,  h}, {0, -1, 0}},
+		// +Z
+		{{-h, -h,  h}, {0, 0, 1}},
+		{{ h, -h,  h}, {0, 0, 1}},
+		{{ h,  h,  h}, {0, 0, 1}},
+		{{-h,  h,  h}, {0, 0, 1}},
+		// -Z
+		{{ h, -h, -h}, {0, 0, -1}},
+		{{-h, -h, -h}, {0, 0, -1}},
+		{{-h,  h, -h}, {0, 0, -1}},
+		{{ h,  h, -h}, {0, 0, -1}},
+	};
+
+	builder.indices = {
+		0, 1, 2,  0, 2, 3,        // +X
+		4, 5, 6,  4, 6, 7,        // -X
+		8, 9,10,  8,10,11,        // +Y
+	   12,13,14, 12,14,15,        // -Y
+	   16,17,18, 16,18,19,        // +Z
+	   20,21,22, 20,22,23         // -Z
+	};
 
 	return std::make_unique<Model>(device, builder);
 }

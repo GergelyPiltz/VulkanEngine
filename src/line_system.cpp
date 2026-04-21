@@ -8,16 +8,18 @@
 
 #include <stdexcept>
 #include <array>
-#include <iostream>
+#include <print>
 
 struct SimplePushConstantData {
     glm::mat4 modelMatrix{ 1.0f };
-    glm::mat3x4 normalMatrix{ 1.0f };
 };
 
 LineSystem::LineSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalDescriptorSetLayout) : device{ device } {
     createPipelineLayout(globalDescriptorSetLayout);
     createPipeline(renderPass);
+
+    sphere = Model::sphere(device, 32, 32);
+    cube = Model::cube(device);
 }
 
 LineSystem::~LineSystem() {
@@ -77,20 +79,57 @@ void LineSystem::render(FrameInfo& frameInfo) {
 
     for (auto& kvp : frameInfo.gameObjects) {
         auto& obj = kvp.second;
-        if (obj.wireFrame == nullptr) continue;
-        SimplePushConstantData push{};
-
-        push.modelMatrix = obj.transform->modelMatrix();
-        push.normalMatrix = obj.transform->normalMatrix();
-
-        vkCmdPushConstants(
-            frameInfo.commandBuffer,
-            pipelineLayout,
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-            0,
-            sizeof(SimplePushConstantData),
-            &push);
-        obj.wireFrame->bind(frameInfo.commandBuffer);
-        obj.wireFrame->draw(frameInfo.commandBuffer);
+        drawSphere(obj, frameInfo);
+        drawCube(obj, frameInfo);
     }
+}
+
+void LineSystem::drawSphere(GameObject& object, FrameInfo& frameInfo) {
+    if (object.sphereCollider == nullptr) return;
+
+    transform.position = object.transform->position + object.sphereCollider->center;
+    transform.scale = glm::vec3{ 1.0f } * object.sphereCollider->radius;
+    transform.rotation = object.transform->rotation;
+
+    SimplePushConstantData push{};
+    push.modelMatrix = transform.modelMatrix();
+
+    vkCmdPushConstants(
+        frameInfo.commandBuffer,
+        pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(SimplePushConstantData),
+        &push);
+    sphere->bind(frameInfo.commandBuffer);
+    sphere->draw(frameInfo.commandBuffer);
+}
+
+void LineSystem::drawCube(GameObject& object, FrameInfo& frameInfo) {
+    if (object.boxCollider == nullptr) return;
+
+    auto& min = object.boxCollider->minExtent;
+    auto& max = object.boxCollider->maxExtent;
+
+    assert((min.x < max.x) && (min.y < max.y) && (min.z < max.z) && "incorrect setup of min/max extent of box collider!");
+
+    glm::vec3 diagonal = object.boxCollider->maxExtent - object.boxCollider->minExtent;
+    std::println("diagonal: <{0},{1},{2}>", diagonal.x, diagonal.y, diagonal.z);
+    transform.scale = diagonal;
+    transform.position = object.transform->position + (0.5f * (object.boxCollider->maxExtent + object.boxCollider->minExtent));
+    std::println("position: <{0},{1},{2}>", object.transform->position.x, object.transform->position.y, object.transform->position.z);
+    //transform.rotation = object.transform->rotation;
+
+    SimplePushConstantData push{};
+    push.modelMatrix = transform.modelMatrix();
+
+    vkCmdPushConstants(
+        frameInfo.commandBuffer,
+        pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(SimplePushConstantData),
+        &push);
+    cube->bind(frameInfo.commandBuffer);
+    cube->draw(frameInfo.commandBuffer);
 }

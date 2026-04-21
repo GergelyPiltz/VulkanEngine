@@ -56,7 +56,7 @@ glm::mat4 Transform::modelMatrix() const {
             scale.z * (c1 * c2),
             0.0f,
         },
-        {translation.x, translation.y, translation.z, 1.0f} 
+        {position.x, position.y, position.z, 1.0f} 
     };
 }
 
