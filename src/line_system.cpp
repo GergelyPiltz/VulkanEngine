@@ -1,4 +1,4 @@
-#include "render_system.hpp"
+#include "line_system.hpp"
 #include "global.hpp"
 
 #define GLM_FORCE_RADIANS
@@ -13,19 +13,18 @@
 struct SimplePushConstantData {
     glm::mat4 modelMatrix{ 1.0f };
     glm::mat3x4 normalMatrix{ 1.0f };
-    alignas(16) uint32_t textureIndex;
 };
 
-RenderSystem::RenderSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalDescriptorSetLayout) : device{ device } {
+LineSystem::LineSystem(Device& device, VkRenderPass renderPass, VkDescriptorSetLayout globalDescriptorSetLayout) : device{ device } {
     createPipelineLayout(globalDescriptorSetLayout);
     createPipeline(renderPass);
 }
 
-RenderSystem::~RenderSystem() {
+LineSystem::~LineSystem() {
     vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 }
 
-void RenderSystem::createPipelineLayout(VkDescriptorSetLayout globalDescriptorSetLayout) {
+void LineSystem::createPipelineLayout(VkDescriptorSetLayout globalDescriptorSetLayout) {
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -45,21 +44,24 @@ void RenderSystem::createPipelineLayout(VkDescriptorSetLayout globalDescriptorSe
     }
 }
 
-void RenderSystem::createPipeline(VkRenderPass renderPass) {
+void LineSystem::createPipeline(VkRenderPass renderPass) {
     assert(pipelineLayout != nullptr && "cannot create pipeline before pipeline layout");
 
     PipelineConfigInfo pipelineConfig{};
     Pipeline::defaultPipelineConfigInfo(pipelineConfig);
+    //
+    pipelineConfig.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    //
     pipelineConfig.renderPass = renderPass;
     pipelineConfig.pipelineLayout = pipelineLayout;
     pipeline = std::make_unique<Pipeline>(
         device,
-        "shaders/shader.vert.spv",
-        "shaders/shader.frag.spv",
+        "shaders/line.vert.spv",
+        "shaders/line.frag.spv",
         pipelineConfig);
 }
 
-void RenderSystem::renderGameObjects(FrameInfo& frameInfo) {
+void LineSystem::render(FrameInfo& frameInfo) {
     pipeline->bind(frameInfo.commandBuffer);
 
     vkCmdBindDescriptorSets(
@@ -75,12 +77,11 @@ void RenderSystem::renderGameObjects(FrameInfo& frameInfo) {
 
     for (auto& kvp : frameInfo.gameObjects) {
         auto& obj = kvp.second;
-        if (obj.model == nullptr) continue;
+        if (obj.wireFrame == nullptr) continue;
         SimplePushConstantData push{};
 
         push.modelMatrix = obj.transform->modelMatrix();
         push.normalMatrix = obj.transform->normalMatrix();
-        push.textureIndex = obj.textureIndex;
 
         vkCmdPushConstants(
             frameInfo.commandBuffer,
@@ -89,7 +90,7 @@ void RenderSystem::renderGameObjects(FrameInfo& frameInfo) {
             0,
             sizeof(SimplePushConstantData),
             &push);
-        obj.model->bind(frameInfo.commandBuffer);
-        obj.model->draw(frameInfo.commandBuffer);
+        obj.wireFrame->bind(frameInfo.commandBuffer);
+        obj.wireFrame->draw(frameInfo.commandBuffer);
     }
 }

@@ -1,4 +1,5 @@
 #version 450
+#extension GL_KHR_vulkan_glsl : enable
 
 const vec2 OFFSETS[6] = vec2[](
   vec2(-1.0, -1.0),
@@ -31,23 +32,10 @@ layout(push_constant) uniform Push {
 	float radius;
 } push;
 
-void main() {
-
-//	fragOffset = OFFSETS[gl_VertexIndex];
-//	vec3 cameraRightWorld = {ubo.view[0][0], ubo.view[1][0], ubo.view[2][0]};
-//	vec3 cameraUpWorld = {ubo.view[0][1], ubo.view[1][1], ubo.view[2][1]};
-//
-//	vec3 positionWorld = ubo. lightPosition.xyz
-//		+ LIGHT_RADIUS * fragOffset.x * cameraRightWorld
-//		+ LIGHT_RADIUS * fragOffset.y * cameraUpWorld;
-//
-//	gl_Position = ubo.projection * ubo.view * vec4(positionWorld, 1.0);
-
-	
+void main() {	
 	fragOffset = OFFSETS[gl_VertexIndex];
 	// alternative method is to first transform light position to camera space, then apply offset in camera space.
 	vec4 lightInCameraSpace = ubo.view * vec4(push.position.xyz, 1.0);
 	vec4 positionInCameraSpace = lightInCameraSpace + push.radius * vec4(fragOffset, 0.0, 0.0);
 	gl_Position = ubo.projection * positionInCameraSpace;
-
 }

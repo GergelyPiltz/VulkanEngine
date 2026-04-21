@@ -1,6 +1,6 @@
 #include "game_object.hpp"
 
-glm::mat4 TransformComponent::modelMatrix() const {
+glm::mat4 Transform::modelMatrix() const {
     //const float s1 = glm::sin(rotation.x);
     //const float c1 = glm::cos(rotation.x);
     //const float s2 = glm::sin(rotation.y);
@@ -60,7 +60,7 @@ glm::mat4 TransformComponent::modelMatrix() const {
     };
 }
 
-glm::mat3 TransformComponent::normalMatrix() const {
+glm::mat3 Transform::normalMatrix() const {
     //const float s1 = glm::sin(rotation.x);
     //const float c1 = glm::cos(rotation.x);
     //const float s2 = glm::sin(rotation.y);
@@ -113,15 +113,4 @@ glm::mat3 TransformComponent::normalMatrix() const {
             invScale.z * (c1 * c2),
         }
     };
-}
-
-GameObject GameObject::makePointLight(float intensity, float radius, glm::vec3 color)
-{
-    GameObject gameObject = GameObject::createGameObject();
-    gameObject.color = color;
-    gameObject.transform.scale.x = radius;
-    gameObject.pointLight = std::make_unique<PointLightComponent>();
-    gameObject.pointLight->lightIntensity = intensity;
-
-    return gameObject;
 }

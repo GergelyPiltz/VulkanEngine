@@ -8,10 +8,10 @@
 // std
 #include <stdexcept>
 
-Texture::Texture(Device& device) : device{ device } {
+Texture::Texture(Device& device, const char* path) : device{ device } {
 
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("textures/moon.jpeg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {

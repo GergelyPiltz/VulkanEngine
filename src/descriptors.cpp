@@ -31,7 +31,7 @@ DescriptorSetLayout::DescriptorSetLayout(
     Device& device, std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings)
     : device{ device }, bindings{ bindings } {
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
-    for (auto kv : bindings) {
+    for (auto& kv : bindings) {
         setLayoutBindings.push_back(kv.second);
     }
 
@@ -133,8 +133,8 @@ void DescriptorPool::resetPool() {
 DescriptorWriter::DescriptorWriter(DescriptorSetLayout& setLayout, DescriptorPool& pool)
     : setLayout{ setLayout }, pool{ pool } {}
 
-DescriptorWriter& DescriptorWriter::writeBuffer(
-    uint32_t binding, VkDescriptorBufferInfo* bufferInfo) {
+DescriptorWriter& DescriptorWriter::writeBuffers(
+    uint32_t binding, VkDescriptorBufferInfo* bufferInfo, uint32_t descriptorCount) {
     assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
     auto& bindingDescription = setLayout.bindings[binding];
@@ -148,14 +148,14 @@ DescriptorWriter& DescriptorWriter::writeBuffer(
     write.descriptorType = bindingDescription.descriptorType;
     write.dstBinding = binding;
     write.pBufferInfo = bufferInfo;
-    write.descriptorCount = 1;
+    write.descriptorCount = descriptorCount;
 
     writes.push_back(write);
     return *this;
 }
 
-DescriptorWriter& DescriptorWriter::writeImage(
-    uint32_t binding, VkDescriptorImageInfo* imageInfo) {
+DescriptorWriter& DescriptorWriter::writeImages(
+    uint32_t binding, VkDescriptorImageInfo* imageInfo, uint32_t descriptorCount) {
     assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
     auto& bindingDescription = setLayout.bindings[binding];
@@ -169,7 +169,7 @@ DescriptorWriter& DescriptorWriter::writeImage(
     write.descriptorType = bindingDescription.descriptorType;
     write.dstBinding = binding;
     write.pImageInfo = imageInfo;
-    write.descriptorCount = 1;
+    write.descriptorCount = descriptorCount;
 
     writes.push_back(write);
     return *this;

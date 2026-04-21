@@ -17,7 +17,7 @@ public:
 
 	struct Vertex {
 		glm::vec3 position{};
-		glm::vec3 color{};
+		//glm::vec3 color{};
 		glm::vec3 normal{};
 		glm::vec2 uv{};
 
@@ -25,7 +25,7 @@ public:
 		static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
 		bool operator==(const Vertex& other) const {
-			return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
+			return position == other.position /*&& color == other.color*/ && normal == other.normal && uv == other.uv;
 		}
 	};
 
@@ -36,6 +36,7 @@ public:
 		void loadModel(const std::string& path);
 	};
 
+
 	Model(Device& device, const Builder& builder);
 	~Model();
 
@@ -45,6 +46,7 @@ public:
 	Model& operator=(Model&&) = default;
 
 	static std::unique_ptr<Model> createModelFromFile(Device& device, const std::string& filepath);
+	static std::unique_ptr<Model> sphere(Device& device, float radius, int stacks, int slices);
 
 	void bind(VkCommandBuffer commandBuffer);
 	void draw(VkCommandBuffer commandBuffer) const;

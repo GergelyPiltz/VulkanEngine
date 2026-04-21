@@ -18,7 +18,7 @@ namespace std {
 	struct hash<Model::Vertex> {
 		size_t operator()(Model::Vertex const& vertex) const { // overloads the function call
 			size_t seed = 0;
-			hashCombine(seed, vertex.position, vertex.color, vertex.normal, vertex.uv);
+			hashCombine(seed, vertex.position, /*vertex.color,*/ vertex.normal, vertex.uv);
 			return seed;
 		}
 	};
@@ -142,9 +142,9 @@ std::vector<VkVertexInputAttributeDescription> Model::Vertex::getAttributeDescri
 
 	//                             ({ location, binding,           format,                     offset           })
 	attributeDescriptions.push_back({ 0,       0,        VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) });
-	attributeDescriptions.push_back({ 1,       0,        VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
-	attributeDescriptions.push_back({ 2,       0,        VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
-	attributeDescriptions.push_back({ 3,       0,        VK_FORMAT_R32G32_SFLOAT,    offsetof(Vertex, uv) });
+	//attributeDescriptions.push_back({ 1,       0,        VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) });
+	attributeDescriptions.push_back({ 1,       0,        VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) });
+	attributeDescriptions.push_back({ 2,       0,        VK_FORMAT_R32G32_SFLOAT,    offsetof(Vertex, uv) });
 
 	return attributeDescriptions;
 }
@@ -174,11 +174,11 @@ void Model::Builder::loadModel(const std::string& filepath) {
 					attrib.vertices[3 * index.vertex_index + 2],
 				};
 
-				vertex.color = {
-					attrib.colors[3 * index.vertex_index + 0],
-					attrib.colors[3 * index.vertex_index + 1],
-					attrib.colors[3 * index.vertex_index + 2],
-				};
+				// vertex.color = {
+				// 	   attrib.colors[3 * index.vertex_index + 0],
+				// 	   attrib.colors[3 * index.vertex_index + 1],
+				// 	   attrib.colors[3 * index.vertex_index + 2],
+				// };
 				
 			}
 
@@ -204,4 +204,40 @@ void Model::Builder::loadModel(const std::string& filepath) {
 			indices.push_back(uniqueVertices[vertex]);
 		}
 	}
+}
+
+std::unique_ptr<Model> Model::sphere(Device& device, float radius, int stacks, int slices) {
+	Builder builder;
+
+	for (int y = 0; y <= stacks; ++y) {
+		float v = (float)y / stacks;
+		float theta = v * glm::pi<float>();
+
+		for (int x = 0; x <= slices; ++x) {
+			float u = (float)x / slices;
+			float phi = u * 2 * glm::pi<float>();
+
+			float px = sin(theta) * cos(phi);
+			float py = sin(theta) * sin(phi);
+			float pz = cos(theta);
+
+			builder.vertices.push_back({ (glm::vec3{px, py, pz} * radius), {px, py, pz}, {u, v} });
+
+			int i0 = y * (slices + 1) + x;
+			int i1 = i0 + 1;
+			int i2 = i0 + slices + 1;
+			int i3 = i2 + 1;
+
+			// triangles
+			builder.indices.push_back(i0);
+			builder.indices.push_back(i2);
+			builder.indices.push_back(i1);
+			builder.indices.push_back(i1);
+			builder.indices.push_back(i2);
+			builder.indices.push_back(i3);
+
+		}
+	}
+
+	return std::make_unique<Model>(device, builder);
 }

@@ -9,7 +9,9 @@
 #include <memory>
 #include <unordered_map>
 
-struct TransformComponent {
+struct Transform {
+	Transform() = default;
+
 	glm::vec3 translation = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
 	glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
@@ -38,8 +40,18 @@ struct TransformComponent {
 	glm::mat3 normalMatrix() const;
 };
 
-struct PointLightComponent {
-	float lightIntensity = 1.0f;
+struct PointLight {
+	glm::vec4 color{ 1.0f };
+};
+
+struct RigidBody {
+	glm::vec3 velocity{ 0.0f };
+	glm::vec3 centerOfMass{ 0.0f };
+	float mass = 0.0f;
+};
+
+struct BoundingSphere {
+	float radius = 0.0f;
 };
 
 class GameObject {
@@ -60,13 +72,14 @@ public:
 
 	id_t getId() const { return id; }
 
-	static GameObject makePointLight(float intensity = 1.0f, float radius = 0.1f, glm::vec3 color = glm::vec3(1.0f));
+	uint32_t textureIndex = 0;
 
-	glm::vec3 color{};
-	TransformComponent transform{};
-
-	std::shared_ptr<Model> model{};
-	std::unique_ptr<PointLightComponent> pointLight;
+	std::unique_ptr<Transform> transform;
+	std::shared_ptr<Model> model;
+	std::shared_ptr<Model> wireFrame;
+	std::unique_ptr<PointLight> pointLight;
+	std::unique_ptr<BoundingSphere> boundingSphere;
+	std::unique_ptr<RigidBody> rigidBody;
 
 private:
     GameObject(id_t objId) : id{ objId } {}

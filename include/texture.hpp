@@ -4,7 +4,7 @@
 
 class Texture {
 public:
-    Texture(Device& device);
+    Texture(Device& device, const char* path);
     ~Texture();
 
     VkImageView textureImageView() const { return m_textureImageView; }

@@ -14,7 +14,7 @@ struct FrameInfo {
 	GameObject::Map& gameObjects;
 };
 
-struct PointLight {
+struct PointLightUBO {
 	glm::vec4 position{};
 	glm::vec4 color{};
 };
@@ -27,6 +27,6 @@ struct GlobalUBO {
 	glm::mat4 inverseView{ 1.f };
 	// alignas(16) glm::vec3 lightDirection = glm::normalize(glm::vec3(1.f, -3.f, -1.f));
 	glm::vec4 ambientColor{ 1.f, 1.f, 1.f, .02f };
-	PointLight pointLights[MAX_LIGHTS];
+	PointLightUBO pointLights[MAX_LIGHTS];
 	int numLights;
 };
