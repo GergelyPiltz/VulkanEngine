@@ -36,7 +36,7 @@ add_executable(VulkanEngine
     "src/game_object.cpp"
     "src/buffer.cpp" 
     "src/descriptors.cpp"
- "src/point_light_system.cpp" "src/texture.cpp" "src/texture_sampler.cpp" "src/line_system.cpp" "src/physics_system.cpp")
+ "src/point_light_system.cpp" "src/texture.cpp" "src/texture_sampler.cpp" "src/line_system.cpp" "src/physics_system.cpp" "src/noise.cpp" "src/scalar_field.cpp" "src/terrain_generator.cpp")
 
 include_directories(
     "include"

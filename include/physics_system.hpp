@@ -17,6 +17,7 @@ public:
 	PhysicsSystem(PhysicsSystem&&) = delete;
 	PhysicsSystem& operator=(PhysicsSystem&&) = delete;
 
+	void detect(FrameInfo frameInfo);
 	void update(FrameInfo frameInfo);
 
 private:

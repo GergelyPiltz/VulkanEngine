@@ -114,10 +114,8 @@ void LineSystem::drawCube(GameObject& object, FrameInfo& frameInfo) {
     assert((min.x < max.x) && (min.y < max.y) && (min.z < max.z) && "incorrect setup of min/max extent of box collider!");
 
     glm::vec3 diagonal = object.boxCollider->maxExtent - object.boxCollider->minExtent;
-    std::println("diagonal: <{0},{1},{2}>", diagonal.x, diagonal.y, diagonal.z);
     transform.scale = diagonal;
     transform.position = object.transform->position + (0.5f * (object.boxCollider->maxExtent + object.boxCollider->minExtent));
-    std::println("position: <{0},{1},{2}>", object.transform->position.x, object.transform->position.y, object.transform->position.z);
     //transform.rotation = object.transform->rotation;
 
     SimplePushConstantData push{};

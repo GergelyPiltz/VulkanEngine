@@ -7,6 +7,9 @@
 #include "point_light_system.hpp"
 #include "texture_sampler.hpp"
 #include "physics_system.hpp"
+#include "noise.hpp"
+#include "scalar_field.hpp"
+#include "terrain_generator.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -62,7 +65,7 @@ void VulkanApp::run() {
         .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
         .build();
 
-    const char* pathMoon = "textures/moon.jpeg";
+    const char* pathMoon = "textures/grass.png";
     Texture textureMoon = Texture(device, pathMoon);
 
     const char* pathRotund = "textures/rotund.png";
@@ -141,6 +144,8 @@ void VulkanApp::run() {
             ubo.projection = camera.getProjection();
             ubo.view = camera.getView();
             ubo.inverseView = camera.getInverseView();
+            ubo.ambientColor = { 1.0f, 1.0f, 1.0f, 0.3f };
+
             pointLightSystem.update(frameInfo, ubo);
             uboBuffers[frameIndex]->writeToBuffer(&ubo);
             //uboBuffers[frameIndex]->flush();
@@ -163,6 +168,57 @@ void VulkanApp::run() {
 
 void VulkanApp::loadGameObjects() {
     
+    int axis = 32;
+    int axisPlusOne = axis + 1;
+
+    Noise noise{ 12345 };
+    double** noiseArray = noise.Generate(axisPlusOne, axisPlusOne);
+
+    //for (size_t x = 0; x < width; x++) {
+    //    for (size_t y = 0; y < height; y++) {
+    //        std::cout << noiseArray[x][y] << " ";
+    //    }
+    //    std::cout << std::endl;
+    //}
+
+    ScalarField scalarField{ noiseArray, axisPlusOne, axisPlusOne, axisPlusOne };
+
+    TerrainGenerator terrainGenerator{ scalarField.get(), axis };
+    terrainGenerator.createMeshData();
+    std::vector<glm::vec3> raw = terrainGenerator.getMeshData();
+
+    std::vector<Model::Vertex> vertices(raw.size());
+    std::vector<glm::vec3> normals(raw.size() / 3);
+
+    for (int i = 0; i < raw.size(); i+=3) {
+        glm::vec3 A = raw[i + 1] - raw[i];
+        glm::vec3 B = raw[i + 2] - raw[i];
+        glm::vec3 normal = glm::cross(A, B);
+        normals.push_back(normal);
+    }
+
+    for(int i = 0; i < raw.size(); i++) {
+        vertices.push_back(Model::Vertex{ raw[i], normals[(int)(i / 3)], {raw[i].x, raw[i].z} });
+    }
+
+    Model::Builder builder;
+    builder.vertices = vertices;
+
+    std::shared_ptr<Model> terrainModel = std::make_shared<Model>(device, builder);
+    /////////////////////////////////////////////////////////////////////////////
+
+    auto terrain = GameObject::createGameObject();
+    terrain.model = terrainModel;
+
+    terrain.transform = std::make_unique<Transform>();
+    terrain.transform->position = { -16.0f, -16.0f, -16.0f };
+    terrain.transform->scale = { 1.0f, 1.0f, 1.0f };
+
+    terrain.textureIndex = 1;
+
+    gameObjects.emplace(terrain.getId(), std::move(terrain));
+
+    /////////////////////////////////////////////////////////////////////////////
     std::vector<glm::vec3> lightColors{
         {1.0f, 0.1f, 0.1f},
         {0.1f, 0.1f, 1.0f},
@@ -186,16 +242,17 @@ void VulkanApp::loadGameObjects() {
         gameObjects.emplace(pointLight.getId(), std::move(pointLight));
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+
     //std::shared_ptr<Model> quadModel = Model::createModelFromFile(device, "models/quad.obj");
     //auto quad = GameObject::createGameObject();
     //quad.model = quadModel;
     //quad.transform = std::make_unique<Transform>();
-    //quad.transform->translation = { 0.0f, 0.0f, 0.0f };
+    //quad.transform->position = { 0.0f, 0.0f, 0.0f };
     //quad.transform->scale = { 10.0f, 10.0f, 10.0f };
     //quad.textureIndex = 0;
     //gameObjects.emplace(quad.getId(), std::move(quad));
 
-    ///////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
     auto sphere0 = GameObject::createGameObject();
 
@@ -262,6 +319,17 @@ void VulkanApp::loadGameObjects() {
     pointLight.pointLight->color = glm::vec4( 1.0f );
 
     gameObjects.emplace(pointLight.getId(), std::move(pointLight));
+    ///////////////////////////////////////////////////////////////////
+    auto chunkBounding = GameObject::createGameObject();
 
+    chunkBounding.transform = std::make_unique<Transform>();
+    chunkBounding.transform->position = { 0.0f, 0.0f, 0.0f };
+    chunkBounding.transform->scale = { 1.0f, 1.0f, 1.0f };
+
+    chunkBounding.boxCollider = std::make_unique<BoxCollider>();
+    chunkBounding.boxCollider->minExtent = { -0.0f, -0.0f , -0.0f };
+    chunkBounding.boxCollider->maxExtent = { 32.0f, 32.0f , 32.0f };
+
+    gameObjects.emplace(chunkBounding.getId(), std::move(chunkBounding));
  
 }
