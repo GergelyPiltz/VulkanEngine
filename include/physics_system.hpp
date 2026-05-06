@@ -6,6 +6,8 @@
 // std
 #include <memory>
 #include <vector>
+#include <unordered_map>
+
 
 class PhysicsSystem {
 public:
@@ -17,9 +19,10 @@ public:
 	PhysicsSystem(PhysicsSystem&&) = delete;
 	PhysicsSystem& operator=(PhysicsSystem&&) = delete;
 
-	void detect(FrameInfo frameInfo);
-	void update(FrameInfo frameInfo);
+	void detect(FrameInfo& frameInfo);
+	void update(FrameInfo& frameInfo);
+	void resolveCollisions(FrameInfo& frameInfo);
 
 private:
-
+	std::unordered_multimap<GameObject::id_t, GameObject::id_t> collisions;
 };

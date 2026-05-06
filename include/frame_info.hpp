@@ -7,7 +7,7 @@
 
 struct FrameInfo {
 	int frameIndex;
-	float frameTime;
+	float deltaTime;
 	VkCommandBuffer commandBuffer;
 	Camera& camera;
 	VkDescriptorSet globalDescriptorSet;

@@ -21,6 +21,7 @@
 #include <iostream>
 #include <chrono>
 #include <memory>
+#include <print>
 
 VulkanApp::VulkanApp() {
     globalPool = DescriptorPool::Builder(device)
@@ -65,8 +66,11 @@ void VulkanApp::run() {
         .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
         .build();
 
-    const char* pathMoon = "textures/grass.png";
+    const char* pathMoon = "textures/moon.jpeg";
     Texture textureMoon = Texture(device, pathMoon);
+
+    const char* pathGrass = "textures/grass.png";
+    Texture textureGrass = Texture(device, pathGrass);
 
     const char* pathRotund = "textures/rotund.png";
     Texture textureRotund = Texture(device, pathRotund);
@@ -82,7 +86,7 @@ void VulkanApp::run() {
         auto bufferInfo = uboBuffers[i]->descriptorInfo();
 
         std::vector<VkDescriptorImageInfo> imageInfos(2);
-        imageInfos[0] = { textureSampler.textureSampler(), textureRotund.textureImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+        imageInfos[0] = { textureSampler.textureSampler(), textureGrass.textureImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
         imageInfos[1] = { textureSampler.textureSampler(), textureMoon.textureImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
         
         /*VkDescriptorImageInfo imageInfo{};
@@ -105,7 +109,7 @@ void VulkanApp::run() {
     Camera camera;
     auto viewerObject = GameObject::createGameObject();
     viewerObject.transform = std::make_unique<Transform>();
-    viewerObject.transform->position = {0.0f, -2.0f, -5.0f};
+    viewerObject.transform->position = {0.0f, 0.0f, -15.0f};
     //camera.setViewDirection(viewerObject.transform.translation, { 0.0f, 0.0f, 0.0f });
     KeyboardMovementController cameraController{};
     
@@ -139,6 +143,9 @@ void VulkanApp::run() {
                 gameObjects
             };
 
+            if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS) frameInfo.deltaTime = -frameInfo.deltaTime;
+            if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS) frameInfo.deltaTime = 0.0f;
+
             // update
             GlobalUBO ubo{};
             ubo.projection = camera.getProjection();
@@ -171,53 +178,50 @@ void VulkanApp::loadGameObjects() {
     int axis = 32;
     int axisPlusOne = axis + 1;
 
-    Noise noise{ 12345 };
+    Noise noise{ 0 };
     double** noiseArray = noise.Generate(axisPlusOne, axisPlusOne);
 
-    //for (size_t x = 0; x < width; x++) {
-    //    for (size_t y = 0; y < height; y++) {
-    //        std::cout << noiseArray[x][y] << " ";
-    //    }
-    //    std::cout << std::endl;
-    //}
-
     ScalarField scalarField{ noiseArray, axisPlusOne, axisPlusOne, axisPlusOne };
-
+     
     TerrainGenerator terrainGenerator{ scalarField.get(), axis };
     terrainGenerator.createMeshData();
     std::vector<glm::vec3> raw = terrainGenerator.getMeshData();
-
+     
     std::vector<Model::Vertex> vertices(raw.size());
     std::vector<glm::vec3> normals(raw.size() / 3);
-
+     
     for (int i = 0; i < raw.size(); i+=3) {
         glm::vec3 A = raw[i + 1] - raw[i];
         glm::vec3 B = raw[i + 2] - raw[i];
-        glm::vec3 normal = glm::cross(A, B);
+        glm::vec3 normal = glm::normalize(glm::cross(A, B));
+        //std::println("({0}, {1}, {2})", normal.x, normal.y, normal.z);
         normals.push_back(normal);
     }
-
+     
     for(int i = 0; i < raw.size(); i++) {
-        vertices.push_back(Model::Vertex{ raw[i], normals[(int)(i / 3)], {raw[i].x, raw[i].z} });
+        auto n = normals[(int)(i / 3)];
+        //std::println("({0}, {1}, {2})", raw[i].x, raw[i].y, raw[i].z);
+        vertices.push_back(Model::Vertex{ raw[i], {0.0f, -1.0f, 0.0f}, {raw[i].x, raw[i].z} });
     }
-
+     
     Model::Builder builder;
     builder.vertices = vertices;
-
-    std::shared_ptr<Model> terrainModel = std::make_shared<Model>(device, builder);
+     
+    std::shared_ptr<Model> terrainModel = std::make_shared<Model>(device, builder);    
     /////////////////////////////////////////////////////////////////////////////
-
     auto terrain = GameObject::createGameObject();
     terrain.model = terrainModel;
-
+     
     terrain.transform = std::make_unique<Transform>();
-    terrain.transform->position = { -16.0f, -16.0f, -16.0f };
+    terrain.transform->position = { 0.0f, 0.0f, 0.0f };
     terrain.transform->scale = { 1.0f, 1.0f, 1.0f };
-
-    terrain.textureIndex = 1;
-
+     
+    terrain.textureIndex = 0;
+     
+    terrain.meshCollider = std::make_unique<MeshCollider>();
+    terrain.meshCollider->vertices = raw;
+     
     gameObjects.emplace(terrain.getId(), std::move(terrain));
-
     /////////////////////////////////////////////////////////////////////////////
     std::vector<glm::vec3> lightColors{
         {1.0f, 0.1f, 0.1f},
@@ -227,109 +231,101 @@ void VulkanApp::loadGameObjects() {
         {0.1f, 1.0f, 1.0f},
         {1.0f, 1.0f, 1.0f}
     };
-
+     
     for (int i = 0; i < lightColors.size(); i++) {
         auto pointLight = GameObject::createGameObject();
-
+     
         pointLight.transform = std::make_unique<Transform>();
         auto rotateLight = glm::rotate(glm::mat4{ 1.0f }, (i * glm::two_pi<float>()) / lightColors.size(), glm::vec3{0, -1, 0});
-        pointLight.transform->position = rotateLight * glm::vec4{ 0.0f, -1.5f, 2.0f, 1.0f };
+        pointLight.transform->position = rotateLight * glm::vec4{ 0.0f, 10.0f, 2.0f, 1.0f };
         pointLight.transform->scale.x = 0.1f;
-
+     
         pointLight.pointLight = std::make_unique<PointLight>();
-        pointLight.pointLight->color = glm::vec4(lightColors[i], 1.0f);
-
+        pointLight.pointLight->color = glm::vec4(lightColors[i], 2.0f);
+     
         gameObjects.emplace(pointLight.getId(), std::move(pointLight));
     }
-
     ///////////////////////////////////////////////////////////////////////////
 
-    //std::shared_ptr<Model> quadModel = Model::createModelFromFile(device, "models/quad.obj");
-    //auto quad = GameObject::createGameObject();
-    //quad.model = quadModel;
-    //quad.transform = std::make_unique<Transform>();
-    //quad.transform->position = { 0.0f, 0.0f, 0.0f };
-    //quad.transform->scale = { 10.0f, 10.0f, 10.0f };
-    //quad.textureIndex = 0;
-    //gameObjects.emplace(quad.getId(), std::move(quad));
+    std::shared_ptr<Model> quadModel = Model::createModelFromFile(device, "models/quad.obj");
+    auto quad = GameObject::createGameObject();
+    quad.model = quadModel;
+    quad.transform = std::make_unique<Transform>();
+    quad.transform->position = { 0.0f, 11.0f, 0.0f };
+    quad.transform->scale = { 10.0f, 10.0f, 10.0f };
+    quad.textureIndex = 1;
+    gameObjects.emplace(quad.getId(), std::move(quad));
 
     ///////////////////////////////////////////////////////////////////////////
-    auto sphere0 = GameObject::createGameObject();
+    for (int x = -1; x < 2; x++)
+    for (int y = -1; y < 2; y++)
+    for (int z = -1; z < 2; z++)
+    {
+        auto sphere = GameObject::createGameObject();
 
-    sphere0.transform = std::make_unique<Transform>();
-    sphere0.transform->position = { +5.0f, -3.5f, 0.0f };
-    sphere0.transform->scale = { 1.0f, 1.0f, 1.0f };
+        sphere.transform = std::make_unique<Transform>();
+        sphere.transform->position = {x * 2, y * 2, z * 2};
+        sphere.transform->scale = { 1.0f, 1.0f, 1.0f };
 
-    sphere0.textureIndex = 1;
+        sphere.sphereCollider = std::make_unique<SphereCollider>();
+        sphere.sphereCollider->radius = 0.5f;
 
-    sphere0.sphereCollider = std::make_unique<SphereCollider>();
-    sphere0.sphereCollider->radius = 0.1f;
+        sphere.rigidBody = std::make_unique<RigidBody>();
+        sphere.rigidBody->velocity = { rand() % 10 + 1, rand() % 10 + 1, rand() % 10 + 1 };
+        sphere.rigidBody->mass = 1.0f;
 
-    sphere0.rigidBody = std::make_unique<RigidBody>();
-    sphere0.rigidBody->velocity = { -4.0f, 0.0f, 0.0f };
-    sphere0.rigidBody->mass = 1.0f;
-
-    gameObjects.emplace(sphere0.getId(), std::move(sphere0));
+        gameObjects.emplace(sphere.getId(), std::move(sphere));
+    }
     ///////////////////////////////////////////////////////////////////////////
-    auto sphere1 = GameObject::createGameObject();
+    auto cube = GameObject::createGameObject();
+    
+    cube.transform = std::make_unique<Transform>();
+    cube.transform->position = { 0.0f, 0.0f, 0.0f };
+    cube.transform->scale = { 1.0f, 1.0f, 1.0f };
 
-    sphere1.transform = std::make_unique<Transform>();
-    sphere1.transform->position = { -2.0f, -4.5f, 0.0f };
-    sphere1.transform->scale = { 1.0f, 1.0f, 1.0f };
-
-    sphere1.textureIndex = 1;
-
-    sphere1.sphereCollider = std::make_unique<SphereCollider>();
-    sphere1.sphereCollider->radius = 1.0f;
-
-    sphere1.rigidBody = std::make_unique<RigidBody>();
-    sphere1.rigidBody->velocity = { +1.0f, 0.0f, 0.0f };
-    sphere1.rigidBody->mass = 1.0f;
-
-    gameObjects.emplace(sphere1.getId(), std::move(sphere1));
-    ///////////////////////////////////////////////////////////////////////////
-    auto cube0 = GameObject::createGameObject();
-
-    cube0.transform = std::make_unique<Transform>();
-    cube0.transform->position = { 0.0f, 0.0f, 0.0f };
-    cube0.transform->scale = { 1.0f, 1.0f, 1.0f };
-
-    cube0.textureIndex = 1;
-
-    cube0.boxCollider = std::make_unique<BoxCollider>();
-    cube0.boxCollider->minExtent = { -0.5f, -0.5f , -0.5f };
-    cube0.boxCollider->maxExtent = { 0.5f, 0.5f , 0.5f };
-
-    cube0.sphereCollider = std::make_unique<SphereCollider>();
-    cube0.sphereCollider->radius = 0.5f;
-
-    cube0.rigidBody = std::make_unique<RigidBody>();
-    cube0.rigidBody->velocity = { 0.0f, 0.0f, 0.0f };
-    cube0.rigidBody->mass = 0.0f;
-
-    gameObjects.emplace(cube0.getId(), std::move(cube0));
+    cube.boxCollider = std::make_unique<BoxCollider>();
+    cube.boxCollider->minExtent = { -5.0f, -5.0f, -5.0f };
+    cube.boxCollider->maxExtent = { 5.0f, 5.0f, 5.0f };
+    
+    cube.rigidBody = std::make_unique<RigidBody>();
+    cube.rigidBody->velocity = { 0.0f, 0.0f, 0.0f };
+    cube.rigidBody->mass = 0.0f;
+    
+    gameObjects.emplace(cube.getId(), std::move(cube));
     ///////////////////////////////////////////////////////////////////
-    auto pointLight = GameObject::createGameObject();
+    auto ORIGIN = GameObject::createGameObject();
 
-    pointLight.transform = std::make_unique<Transform>();
-    pointLight.transform->position = { 0.0f, 0.0f, 0.0f };
-    pointLight.transform->scale.x = 0.1f;
+    ORIGIN.transform = std::make_unique<Transform>();
+    ORIGIN.transform->position = { 0.0f, 0.0f, 0.0f };
+    ORIGIN.transform->scale.x = 0.1f;
 
-    pointLight.pointLight = std::make_unique<PointLight>();
-    pointLight.pointLight->color = glm::vec4( 1.0f );
+    ORIGIN.pointLight = std::make_unique<PointLight>();
+    ORIGIN.pointLight->color = glm::vec4( 1.0f );
 
-    gameObjects.emplace(pointLight.getId(), std::move(pointLight));
+    gameObjects.emplace(ORIGIN.getId(), std::move(ORIGIN));
     ///////////////////////////////////////////////////////////////////
-    auto chunkBounding = GameObject::createGameObject();
+    auto vase = GameObject::createGameObject();
+    std::shared_ptr<Model> vaseModel = Model::createModelFromFile(device, "models/smooth_vase.obj");
+    vase.model = vaseModel;
 
-    chunkBounding.transform = std::make_unique<Transform>();
-    chunkBounding.transform->position = { 0.0f, 0.0f, 0.0f };
-    chunkBounding.transform->scale = { 1.0f, 1.0f, 1.0f };
+    vase.transform = std::make_unique<Transform>();
+    vase.transform->position = { 0.0f, 11.0f, 0.0f };
+    vase.transform->scale = { 5.0f, 5.0f, 5.0f };
 
-    chunkBounding.boxCollider = std::make_unique<BoxCollider>();
-    chunkBounding.boxCollider->minExtent = { -0.0f, -0.0f , -0.0f };
-    chunkBounding.boxCollider->maxExtent = { 32.0f, 32.0f , 32.0f };
+    vase.textureIndex = 1;
 
-    gameObjects.emplace(chunkBounding.getId(), std::move(chunkBounding));
+    gameObjects.emplace(vase.getId(), std::move(vase));
+    ///////////////////////////////////////////////////////////////////
+    // auto chunkBounding = GameObject::createGameObject();
+    // 
+    // chunkBounding.transform = std::make_unique<Transform>();
+    // chunkBounding.transform->position = { 0.0f, 0.0f, 0.0f };
+    // chunkBounding.transform->scale = { 1.0f, 1.0f, 1.0f };
+    // 
+    // chunkBounding.boxCollider = std::make_unique<BoxCollider>();
+    // chunkBounding.boxCollider->minExtent = { -0.0f, -0.0f , -0.0f };
+    // chunkBounding.boxCollider->maxExtent = { 32.0f, 32.0f , 32.0f };
+    // 
+    // gameObjects.emplace(chunkBounding.getId(), std::move(chunkBounding));
  
 }

@@ -60,6 +60,10 @@ struct BoxCollider {
 	glm::vec3 maxExtent{ 0.0f };
 };
 
+struct MeshCollider {
+	std::vector<glm::vec3> vertices;
+};
+
 class GameObject {
 public:
 	using id_t = unsigned int;
@@ -88,6 +92,7 @@ public:
 	std::unique_ptr<RigidBody> rigidBody;
 	std::unique_ptr<SphereCollider> sphereCollider;
 	std::unique_ptr<BoxCollider> boxCollider;
+	std::unique_ptr<MeshCollider> meshCollider;
 
 private:
     GameObject(id_t objId) : id{ objId } {}
