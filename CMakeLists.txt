@@ -55,6 +55,11 @@ target_link_libraries(VulkanEngine
 find_package(Vulkan REQUIRED)
 
 # ----------------------------------
+# Jolt Physics configuration
+# ----------------------------------
+add_subdirectory(external/JoltPhysics/Build)
+
+# ----------------------------------
 # GLM configuration
 # ----------------------------------
 add_subdirectory(external/glm)
